@@ -30,6 +30,7 @@ const (
 func newLogicClient(c *conf.RPCClient) logic.LogicClient {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.Dial))
 	defer cancel()
+	// 从discovery获取Logic注册的grpc服务地址并连接，goim.logic为logic的appid
 	conn, err := grpc.DialContext(ctx, "discovery://default/goim.logic",
 		[]grpc.DialOption{
 			grpc.WithInsecure(),
@@ -48,6 +49,7 @@ func newLogicClient(c *conf.RPCClient) logic.LogicClient {
 	if err != nil {
 		panic(err)
 	}
+	// 连接Logic的grpc客户端
 	return logic.NewLogicClient(conn)
 }
 
@@ -111,15 +113,18 @@ func (s *Server) onlineproc() {
 			err           error
 		)
 		roomCount := make(map[string]int32)
+		// 汇总本节点所有房间的人数
 		for _, bucket := range s.buckets {
 			for roomID, count := range bucket.RoomsCount() {
 				roomCount[roomID] += count
 			}
 		}
+		// 向Logic上报本节点房间人数，并从Logic获取集群中所有房间总人数(Logic定期汇总)
 		if allRoomsCount, err = s.RenewOnline(context.Background(), s.serverID, roomCount); err != nil {
 			time.Sleep(time.Second)
 			continue
 		}
+		// 更新本节点所有房间的集群总人数
 		for _, bucket := range s.buckets {
 			bucket.UpRoomsCount(allRoomsCount)
 		}

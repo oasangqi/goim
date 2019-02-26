@@ -26,6 +26,7 @@ func InitTCP(server *Server, addrs []string, accept int) (err error) {
 		listener *net.TCPListener
 		addr     *net.TCPAddr
 	)
+	// 可以配多个TCP服务地址
 	for _, bind = range addrs {
 		if addr, err = net.ResolveTCPAddr("tcp", bind); err != nil {
 			log.Errorf("net.ResolveTCPAddr(tcp, %s) error(%v)", bind, err)
@@ -145,6 +146,7 @@ func (s *Server) ServeTCP(conn *net.TCPConn, rp, wp *bytes.Pool, tr *xtime.Timer
 		return
 	}
 	trd.Key = ch.Key
+	// 认证成功后，超时时间为心跳时间
 	tr.Set(trd, hb)
 	white = whitelist.Contains(ch.Mid)
 	if white {
@@ -172,6 +174,7 @@ func (s *Server) ServeTCP(conn *net.TCPConn, rp, wp *bytes.Pool, tr *xtime.Timer
 			p.Op = grpc.OpHeartbeatReply
 			p.Body = nil
 			// NOTE: send server heartbeat for a long time
+			// 向logic发送心跳，logic给redis中的key保活(时间精度如果要求较高，可以注册定时器来做)
 			if now := time.Now(); now.Sub(lastHb) > serverHeartbeat {
 				if err1 := s.Heartbeat(ctx, ch.Mid, ch.Key); err1 == nil {
 					lastHb = now
@@ -253,6 +256,7 @@ func (s *Server) dispatchTCP(conn *net.TCPConn, wr *bufio.Writer, wp *bytes.Pool
 			goto failed
 		case grpc.ProtoReady:
 			// fetch message from svrbox(client send)
+			// 给客户端的回包数据位于CliProto，signal仅用于通知(处理1个Proto同时写一次signal，for循环有何用意？)
 			for {
 				if p, err = ch.CliProto.Get(); err != nil {
 					break
@@ -279,6 +283,7 @@ func (s *Server) dispatchTCP(conn *net.TCPConn, wr *bufio.Writer, wp *bytes.Pool
 				ch.CliProto.GetAdv()
 			}
 		default:
+			// 服务器过来的每条协议直接发送到signal
 			if white {
 				whitelist.Printf("key: %s start write server proto%v\n", ch.Key, p)
 			}

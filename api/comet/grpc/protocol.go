@@ -101,6 +101,7 @@ func (p *Proto) WriteTCP(wr *bufio.Writer) (err error) {
 	)
 	if p.Op == OpRaw {
 		// write without buffer, job concact proto into raw buffer
+		// 裸数据，无协议头
 		_, err = wr.WriteRaw(p.Body)
 		return
 	}

@@ -125,10 +125,12 @@ func (j *Job) newAddress(insMap map[string][]*naming.Instance) error {
 	}
 	comets := map[string]*Comet{}
 	for _, in := range ins {
+		// 线上节点
 		if old, ok := j.cometServers[in.Hostname]; ok {
 			comets[in.Hostname] = old
 			continue
 		}
+		// 新上线节点
 		c, err := NewComet(in, j.c.Comet)
 		if err != nil {
 			log.Errorf("watchComet NewComet(%+v) error(%v)", in, err)
@@ -137,6 +139,7 @@ func (j *Job) newAddress(insMap map[string][]*naming.Instance) error {
 		comets[in.Hostname] = c
 		log.Infof("watchComet AddComet grpc:%+v", in)
 	}
+	// 下线节点
 	for key, old := range j.cometServers {
 		if _, ok := comets[key]; !ok {
 			old.cancel()

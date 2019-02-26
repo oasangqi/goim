@@ -78,7 +78,7 @@ func (w *weightedNode) calcuateWeight(totalWeight, totalConns int64, gainWeight 
 type LoadBalancer struct {
 	totalConns  int64
 	totalWeight int64
-	nodes       map[string]*weightedNode
+	nodes       map[string]*weightedNode // comet节点  key为hostname
 	nodesMutex  sync.Mutex
 }
 
@@ -98,12 +98,15 @@ func (lb *LoadBalancer) Size() int {
 func (lb *LoadBalancer) weightedNodes(region string, regionWeight float64) (nodes []*weightedNode) {
 	for _, n := range lb.nodes {
 		var gainWeight = float64(1.0)
+		// region命中，增加权值
 		if n.region == region {
 			gainWeight *= regionWeight
 		}
+		// 重新计算节点权值
 		n.calcuateWeight(lb.totalWeight, lb.totalConns, gainWeight)
 		nodes = append(nodes, n)
 	}
+	// 节点按权值降序
 	sort.Slice(nodes, func(i, j int) bool {
 		return nodes[i].currentWeight > nodes[j].currentWeight
 	})
@@ -143,6 +146,7 @@ func (lb *LoadBalancer) Update(ins []*naming.Instance) {
 	lb.nodesMutex.Lock()
 	for _, in := range ins {
 		if old, ok := lb.nodes[in.Hostname]; ok && old.updated == in.LastTs {
+			// 该节点未更新，取原始数据
 			nodes[in.Hostname] = old
 			totalConns += old.currentConns
 			totalWeight += old.fixedWeight

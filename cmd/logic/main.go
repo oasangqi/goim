@@ -72,7 +72,7 @@ func register(dis *naming.Discovery, srv *logic.Logic) context.CancelFunc {
 		Zone:     env.Zone,
 		Env:      env.DeployEnv,
 		Hostname: env.Host,
-		AppID:    appid,
+		AppID:    appid, // comet通过appid向Discovery获取到Addrs
 		Addrs: []string{
 			"grpc://" + addr + ":" + port,
 		},
@@ -80,6 +80,7 @@ func register(dis *naming.Discovery, srv *logic.Logic) context.CancelFunc {
 			model.MetaWeight: strconv.FormatInt(env.Weight, 10),
 		},
 	}
+	log.Infof("Discovery register <%v>", *ins)
 	cancel, err := dis.Register(ins)
 	if err != nil {
 		panic(err)

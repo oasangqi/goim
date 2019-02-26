@@ -25,6 +25,7 @@ func InitWhitelist(c *conf.Whitelist) (err error) {
 		whitelist = new(Whitelist)
 		whitelist.log = log.New(f, "", log.LstdFlags)
 		whitelist.list = make(map[int64]struct{})
+		// list为map实现的set
 		for _, mid = range c.Whitelist {
 			whitelist.list[mid] = struct{}{}
 		}

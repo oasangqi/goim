@@ -14,7 +14,7 @@ type Room struct {
 	next      *Channel
 	drop      bool
 	Online    int32 // dirty read is ok
-	AllOnline int32
+	AllOnline int32 // 集群中的该房间在线人数
 }
 
 // NewRoom new a room struct, store channel room info.

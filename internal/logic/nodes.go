@@ -47,6 +47,7 @@ func (l *Logic) nodeAddrs(c context.Context, clientIP string) (domains, addrs []
 	var (
 		region string
 	)
+	// TODO:取IP所在的省份
 	province, err := l.location(c, clientIP)
 	if err == nil {
 		region = l.regions[province]

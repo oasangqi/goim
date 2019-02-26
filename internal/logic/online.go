@@ -27,6 +27,7 @@ func (l *Logic) OnlineTop(c context.Context, typ string, n int) (tops []*model.T
 			tops = append(tops, top)
 		}
 	}
+	// 按人数降序排列tops
 	sort.Slice(tops, func(i, j int) bool {
 		return tops[i].Count > tops[j].Count
 	})

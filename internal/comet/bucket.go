@@ -29,6 +29,7 @@ func NewBucket(c *conf.Bucket) (b *Bucket) {
 	b.c = c
 	b.rooms = make(map[string]*Room, c.Room)
 	b.routines = make([]chan *grpc.BroadcastRoomReq, c.RoutineAmount)
+	// 多个go routine并发广播该Bucket内的房间消息
 	for i := uint64(0); i < c.RoutineAmount; i++ {
 		c := make(chan *grpc.BroadcastRoomReq, c.RoutineSize)
 		b.routines[i] = c

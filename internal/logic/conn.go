@@ -50,6 +50,7 @@ func (l *Logic) Disconnect(c context.Context, mid int64, key, server string) (ha
 
 // Heartbeat heartbeat a conn.
 func (l *Logic) Heartbeat(c context.Context, mid int64, key, server string) (err error) {
+	// 重设redis中的key过期时间
 	has, err := l.dao.ExpireMapping(c, mid, key)
 	if err != nil {
 		log.Errorf("l.dao.ExpireMapping(%d,%s,%s) error(%v)", mid, key, server, err)
@@ -72,9 +73,11 @@ func (l *Logic) RenewOnline(c context.Context, server string, roomCount map[stri
 		RoomCount: roomCount,
 		Updated:   time.Now().Unix(),
 	}
+	// 更新该comet节点各房间在线人数
 	if err := l.dao.AddServerOnline(context.Background(), server, online); err != nil {
 		return nil, err
 	}
+	// 返回上次刷新的所有comet各房间在线人数
 	return l.roomCount, nil
 }
 

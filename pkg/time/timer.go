@@ -120,6 +120,7 @@ func (t *Timer) Del(td *TimerData) {
 
 // Push pushes the element x onto the heap. The complexity is
 // O(log(n)) where n = h.Len().
+// 堆添加节点
 func (t *Timer) add(td *TimerData) {
 	var d itime.Duration
 	td.index = len(t.timers)
@@ -139,6 +140,7 @@ func (t *Timer) add(td *TimerData) {
 	}
 }
 
+// 从堆中删除节点i(删除节点的回收由调用者执行)
 func (t *Timer) del(td *TimerData) {
 	var (
 		i    = td.index
@@ -176,7 +178,9 @@ func (t *Timer) Set(td *TimerData, expire itime.Duration) {
 // start start the timer.
 func (t *Timer) start() {
 	for {
+		// 系统时间超时一次可能会响应多个封装的定时器
 		t.expire()
+		// 阻塞在下次系统时间超时
 		<-t.signal.C
 	}
 }
@@ -199,10 +203,13 @@ func (t *Timer) expire() {
 			}
 			break
 		}
+		// 小顶堆每次取堆顶
 		td = t.timers[0]
 		if d = td.Delay(); d > 0 {
+			// 未超时
 			break
 		}
+		// 超时: 调整堆、执行回调
 		fn = td.fn
 		// let caller put back
 		t.del(td)
@@ -217,6 +224,7 @@ func (t *Timer) expire() {
 		}
 		t.lock.Lock()
 	}
+	// 重置下次系统超时时间
 	t.signal.Reset(d)
 	if Debug {
 		log.Infof("timer: expier reset delay %d ms", int64(d)/int64(itime.Millisecond))
@@ -235,6 +243,7 @@ func (t *Timer) up(j int) {
 	}
 }
 
+// 节点i递归下沉
 func (t *Timer) down(i, n int) {
 	for {
 		j1 := 2*i + 1

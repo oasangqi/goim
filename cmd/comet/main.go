@@ -46,12 +46,15 @@ func main() {
 	if err := comet.InitWhitelist(conf.Conf.Whitelist); err != nil {
 		panic(err)
 	}
+	// TCP: 3101
 	if err := comet.InitTCP(srv, conf.Conf.TCP.Bind, runtime.NumCPU()); err != nil {
 		panic(err)
 	}
+	// WS: 3102
 	if err := comet.InitWebsocket(srv, conf.Conf.Websocket.Bind, runtime.NumCPU()); err != nil {
 		panic(err)
 	}
+	// WSS: 3103
 	if conf.Conf.Websocket.TLSOpen {
 		if err := comet.InitWebsocketWithTLS(srv, conf.Conf.Websocket.TLSBind, conf.Conf.Websocket.CertFile, conf.Conf.Websocket.PrivateFile, runtime.NumCPU()); err != nil {
 			panic(err)
@@ -92,7 +95,7 @@ func register(dis *naming.Discovery, srv *comet.Server) context.CancelFunc {
 		Zone:     env.Zone,
 		Env:      env.DeployEnv,
 		Hostname: env.Host,
-		AppID:    appid,
+		AppID:    appid, // logic、job可通过appid获取comet的grpc服务地址
 		Addrs: []string{
 			"grpc://" + addr + ":" + port,
 		},

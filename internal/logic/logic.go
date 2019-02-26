@@ -61,12 +61,14 @@ func (l *Logic) Close() {
 func (l *Logic) initRegions() {
 	for region, ps := range l.c.Regions {
 		for _, province := range ps {
+			// province="北京" region="bj"...
 			l.regions[province] = region
 		}
 	}
 }
 
 func (l *Logic) initNodes() {
+	// comet的appid为goim.comet
 	res := l.dis.Build("goim.comet")
 	event := res.Watch()
 	select {
@@ -130,6 +132,7 @@ func (l *Logic) newNodes(res naming.Resolver) {
 }
 
 func (l *Logic) onlineproc() {
+	// 定期汇总在线人数(所有Comet节点)
 	for {
 		time.Sleep(_onlineTick)
 		if err := l.loadOnline(); err != nil {

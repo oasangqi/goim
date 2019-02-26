@@ -145,6 +145,7 @@ func (d *Dao) ServersByKeys(c context.Context, keys []string) (res []string, err
 	for _, key := range keys {
 		args = append(args, keyKeyServer(key))
 	}
+	// 一次获取多个key的value
 	if res, err = redis.Strings(conn.Do("MGET", args...)); err != nil {
 		log.Errorf("conn.Do(MGET %v) error(%v)", args, err)
 	}
@@ -186,6 +187,7 @@ func (d *Dao) KeysByMids(c context.Context, mids []int64) (ress map[string]strin
 
 // AddServerOnline add a server online.
 func (d *Dao) AddServerOnline(c context.Context, server string, online *model.Online) (err error) {
+	// hash(roomid)%64:roomid:count,不同的roomid算出的hash%64值可能相同
 	roomsMap := map[uint32]map[string]int32{}
 	for room, count := range online.RoomCount {
 		rMap := roomsMap[cityhash.CityHash32([]byte(room), uint32(len(room)))%64]
@@ -209,6 +211,7 @@ func (d *Dao) addServerOnline(c context.Context, key string, hashKey string, onl
 	conn := d.redis.Get()
 	defer conn.Close()
 	b, _ := json.Marshal(online)
+	// 以hash作为字段名存入redis
 	if err = conn.Send("HSET", key, hashKey, b); err != nil {
 		log.Errorf("conn.Send(SET %s,%s) error(%v)", key, hashKey, err)
 		return
@@ -234,13 +237,16 @@ func (d *Dao) addServerOnline(c context.Context, key string, hashKey string, onl
 func (d *Dao) ServerOnline(c context.Context, server string) (online *model.Online, err error) {
 	online = &model.Online{RoomCount: map[string]int32{}}
 	key := keyServerOnline(server)
+	// 0~64作为redis中在线人数的字段名
 	for i := 0; i < 64; i++ {
+		// 从redis取出该server上每个
 		ol, err := d.serverOnline(c, key, strconv.FormatInt(int64(i), 10))
 		if err == nil && ol != nil {
 			online.Server = ol.Server
 			if ol.Updated > online.Updated {
 				online.Updated = ol.Updated
 			}
+			// 解析该字段对应的所有房间人数
 			for room, count := range ol.RoomCount {
 				online.RoomCount[room] = count
 			}

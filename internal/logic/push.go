@@ -10,10 +10,12 @@ import (
 
 // PushKeys push a message by keys.
 func (l *Logic) PushKeys(c context.Context, op int32, keys []string, msg []byte) (err error) {
+	// servers和keys按顺序对应
 	servers, err := l.dao.ServersByKeys(c, keys)
 	if err != nil {
 		return
 	}
+	// map serverID:keys
 	pushKeys := make(map[string][]string)
 	for i, key := range keys {
 		server := servers[i]
@@ -21,6 +23,7 @@ func (l *Logic) PushKeys(c context.Context, op int32, keys []string, msg []byte)
 			pushKeys[server] = append(pushKeys[server], key)
 		}
 	}
+	// 推送给serverID上的keys(生产kafka消息)
 	for server := range pushKeys {
 		if err = l.dao.PushMsg(c, op, server, pushKeys[server], msg); err != nil {
 			return
@@ -31,10 +34,12 @@ func (l *Logic) PushKeys(c context.Context, op int32, keys []string, msg []byte)
 
 // PushMids push a message by mid.
 func (l *Logic) PushMids(c context.Context, op int32, mids []int64, msg []byte) (err error) {
+	// 从redis获取map key:serverID
 	keyServers, _, err := l.dao.KeysByMids(c, mids)
 	if err != nil {
 		return
 	}
+	// map serverID:keys
 	keys := make(map[string][]string)
 	for key, server := range keyServers {
 		if key == "" || server == "" {
@@ -43,6 +48,7 @@ func (l *Logic) PushMids(c context.Context, op int32, mids []int64, msg []byte) 
 		}
 		keys[server] = append(keys[server], key)
 	}
+	// 推送给serverID上的keys(生产kafka消息)
 	for server, keys := range keys {
 		if err = l.dao.PushMsg(c, op, server, keys, msg); err != nil {
 			return
